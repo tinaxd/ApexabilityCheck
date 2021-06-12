@@ -52,7 +52,8 @@ async def on_member_update(before: discord.Member, after: discord.Member) -> Non
         return
     if after.status == discord.Status.online \
        and before.status != discord.Status.online:
-        await _send_member_online_notification(after)
+        #await _send_member_online_notification(after)
+        pass
     elif after.activity.type == discord.ActivityType.playing:
         after_game = after.activity.name
         if before.activity.type == discord.ActivityType.playing:
