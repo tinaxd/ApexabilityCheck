@@ -42,7 +42,7 @@ async def _send_start_game_notification(member: discord.Member) -> None:
     playing = cast(discord.Game, member.activity).name
     chan = _find_channel(guild, 'online-status')
     if chan:
-        content = f'${member.display_name} が ${playing} を始めたよ!'
+        content = f'${member.display_name} が ${playing} を始めました'
         await chan.send(content=content)
 
 @client.event
