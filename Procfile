@@ -1,1 +1,1 @@
-web: python -m apexbot.main
+worker: python -m apexbot.main
