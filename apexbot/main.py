@@ -40,7 +40,7 @@ async def _send_member_online_notification(member: discord.Member) -> None:
 async def _send_start_game_notification(member: discord.Member) -> None:
     guild = member.guild
     playing = cast(discord.Game, member.activity).name
-    chan = _find_channel(guild, 'general')
+    chan = _find_channel(guild, 'online-status')
     if chan:
         content = f'${member.display_name} が ${playing} を始めたよ!'
         await chan.send(content=content)
@@ -53,5 +53,14 @@ async def on_member_update(before: discord.Member, after: discord.Member) -> Non
     if after.status == discord.Status.online \
        and before.status != discord.Status.online:
         await _send_member_online_notification(after)
+    elif isinstance(after.activity, discord.Game):
+        after_game = after.activity.name
+        if isinstance(before.activity, discord.Game):
+            before_game = before.activity.name
+            if after_game != before_game:
+                await _send_start_game_notification(after)
+        else:
+            await _send_start_game_notification(after)
+
 
 client.run(TOKEN)
