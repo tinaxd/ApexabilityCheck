@@ -53,9 +53,9 @@ async def on_member_update(before: discord.Member, after: discord.Member) -> Non
     if after.status == discord.Status.online \
        and before.status != discord.Status.online:
         await _send_member_online_notification(after)
-    elif isinstance(after.activity, discord.Game):
+    elif after.activity.type == discord.ActivityType.playing:
         after_game = after.activity.name
-        if isinstance(before.activity, discord.Game):
+        if before.activity.type == discord.ActivityType.playing:
             before_game = before.activity.name
             if after_game != before_game:
                 await _send_start_game_notification(after)
