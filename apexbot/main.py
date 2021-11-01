@@ -1,7 +1,7 @@
 import discord # type: ignore
 import os
 import sys
-from typing import cast, Optional, Tuple, Union
+from typing import Dict, cast, Optional, Tuple, Union
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -18,6 +18,7 @@ if not TOKEN:
 intents = discord.Intents.default()
 intents.members = True
 intents.presences = True
+intents.reactions = True
 client = discord.Client(intents=intents)
 
 def _find_channel(guild: discord.Guild, chan_name: str) -> Optional[discord.TextChannel]:
@@ -44,6 +45,30 @@ async def _send_apex_notification(member: discord.Member, game: str, is_start: b
 
 ActType = Union[discord.BaseActivity, discord.Spotify]
 APEXGAME = "Apex Legends"
+
+SELFAPEXCHAN = "self-apexability"
+
+# mapping from GuildId to the id of the message for whose reaction ApexBot should watch for Apexability detection.
+watched_msg: Dict[int, int] = {}
+
+async def send_apexability_msg(guild: discord.Guild) -> None:
+    chan = _find_channel(guild, SELFAPEXCHAN)
+    if not chan:
+        return
+    content = "Apex Legends を始めたら :apex: リアクションをつけてください。やめたらリアクションを外してください。過去のメッセージにリアクションをつけても反応しません。Discord のステータスメッセージを公開している人はリアクションをつける必要はありません。"
+    # find :apex: emoji
+    apex_emoji = None
+    for emoji in guild.emojis:
+        if emoji.name == 'apex':
+            apex_emoji = emoji
+            break
+    else:
+        # :apex: emoji not found
+        logging.info(f":apex: emoji not found in {guild.name}")
+        return
+    msg = await chan.send(content=content)
+    watched_msg[guild.id] = msg.id
+    await msg.add_reaction(apex_emoji)
 
 def apex_started(oldActs: Tuple[ActType], newActs: Tuple[ActType]) -> bool:
     # APEX はプレイしていなかったことを確認
@@ -93,5 +118,42 @@ async def on_member_update(before: discord.Member, after: discord.Member) -> Non
     
     await _send_apex_notification(after, APEXGAME, started)
 
+@client.event
+async def on_ready():
+    for guild in client.guilds:
+        await send_apexability_msg(guild)
+
+async def reaction_handler(payload: discord.RawReactionActionEvent):
+    guild_id = payload.guild_id
+    msg_id = payload.message_id
+    if guild_id not in watched_msg:
+        # unknown guild
+        return
+    if msg_id != watched_msg[guild_id]:
+        # unknown message
+        return
+
+    guild: Optional[discord.Guild] = client.get_guild(guild_id)
+    if not guild:
+        return
+    member: Optional[discord.Member] = guild.get_member(payload.user_id)
+    if not member:
+        return
+    if member.display_name == "APEXBOT":
+        # member is APEXBOT itself
+        return
+    
+    if payload.event_type == "REACTION_ADD":
+        await _send_apex_notification(member, APEXGAME, True)
+    elif payload.event_type == "REACTION_REMOVE":
+        await _send_apex_notification(member, APEXGAME, False)
+
+@client.event
+async def on_raw_reaction_add(payload):
+    await reaction_handler(payload)
+
+@client.event
+async def on_raw_reaction_remove(payload):
+    await reaction_handler(payload)
 
 client.run(TOKEN)
