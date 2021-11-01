@@ -44,6 +44,7 @@ async def _send_apex_notification(member: discord.Member, game: str, is_start: b
 
 ActType = Union[discord.BaseActivity, discord.Spotify]
 APEXGAME = "Apex Legends"
+CUSTOM_APEXGAME = "AL"
 
 def apex_started(oldActs: Tuple[ActType], newActs: Tuple[ActType]) -> bool:
     # APEX はプレイしていなかったことを確認
@@ -51,6 +52,10 @@ def apex_started(oldActs: Tuple[ActType], newActs: Tuple[ActType]) -> bool:
         if (isinstance(act, discord.Spotify)):
             continue
         if act.type == discord.ActivityType.playing and act.name == APEXGAME:
+            # playing Apex Legends
+            return False
+        elif act.type == discord.ActivityType.custom and act.name == CUSTOM_APEXGAME:
+            # custom "AL"
             return False
     
     # 今 APEX をプレイしていることを確認
