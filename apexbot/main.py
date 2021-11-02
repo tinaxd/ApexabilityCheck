@@ -32,6 +32,22 @@ def _find_channel(guild: discord.Guild, chan_name: str) -> Optional[discord.Text
 
 NOTIFYCHAN = 'apexability-check'
 
+def find_APEXable_role(guild: discord.Guild) -> Optional[discord.Role]:
+    roles = guild.roles
+    for role in roles:
+        if role.name == "APEXable":
+            return role
+    return None
+
+async def _apex_role_change(member: discord.Member, on: bool) -> None:
+    role = find_APEXable_role(member.guild)
+    if not role:
+        return
+    if on:
+        await member.add_roles(role)
+    else:
+        await member.remove_roles(role)
+
 async def _send_apex_notification(member: discord.Member, game: str, is_start: bool) -> None:
     guild = member.guild
     chan = _find_channel(guild, NOTIFYCHAN)
@@ -42,6 +58,7 @@ async def _send_apex_notification(member: discord.Member, game: str, is_start: b
             tail = 'をやめました！'
         content = f'{member.display_name} が {game} {tail}'
         await chan.send(content=content)
+        await _apex_role_change(member, is_start)
 
 ActType = Union[discord.BaseActivity, discord.Spotify]
 APEXGAME = "Apex Legends"
