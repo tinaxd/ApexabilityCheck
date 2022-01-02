@@ -3,6 +3,8 @@ import os
 import sys
 from typing import Dict, cast, Optional, Tuple, Union
 import logging
+from datetime import datetime
+import requests
 
 logging.basicConfig(level=logging.INFO)
 
@@ -48,6 +50,13 @@ async def _apex_role_change(member: discord.Member, on: bool) -> None:
     else:
         await member.remove_roles(role)
 
+def _oneapex_apexability(name: str, is_start: bool, time: datetime) -> None:
+    requests.post("https://oneapex.tinax.work/api/register/apexability", {
+        "in_game_name": name,
+        "type": "start" if is_start else "stop",
+        "time": time.isoformat()
+    })
+
 async def _send_apex_notification(member: discord.Member, game: str, is_start: bool) -> None:
     guild = member.guild
     chan = _find_channel(guild, NOTIFYCHAN)
@@ -59,6 +68,7 @@ async def _send_apex_notification(member: discord.Member, game: str, is_start: b
         content = f'{member.display_name} が {game} {tail}'
         await chan.send(content=content)
         await _apex_role_change(member, is_start)
+        _oneapex_apexability(member.display_name, is_start, datetime.now())
 
 ActType = Union[discord.BaseActivity, discord.Spotify]
 APEXGAME = "Apex Legends"
