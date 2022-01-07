@@ -17,6 +17,15 @@ if not TOKEN:
     print('Please set DISCORD_TOKEN')
     sys.exit(1)
 
+try:
+    WEB_API = os.environ['WEB_API']
+except KeyError:
+    print('Please set WEB_API')
+    sys.exit(1)
+if not WEB_API:
+    print('Please set WEB_API')
+    sys.exit(1)
+
 intents = discord.Intents.default()
 intents.members = True
 intents.presences = True
@@ -51,7 +60,7 @@ async def _apex_role_change(member: discord.Member, on: bool) -> None:
         await member.remove_roles(role)
 
 def _oneapex_apexability(name: str, is_start: bool, time: datetime) -> None:
-    requests.post("https://oneapex.tinax.work/api/register/apexability", {
+    requests.post(WEB_API + "/api/register/apexability", {
         "in_game_name": name,
         "type": "start" if is_start else "stop",
         "time": time.isoformat()
